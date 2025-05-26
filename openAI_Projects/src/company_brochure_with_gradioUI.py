@@ -3,11 +3,12 @@
 import os
 import sys
 import requests
+import gradio as gr
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 from IPython.display import Markdown, display
 from openai import OpenAI
-from utils.modelutils import get_model, get_llm_call, get_llm_json_call, get_llm_stream_call
+from utils.modelutils import get_model, get_llm_call, get_llm_json_call, get_llm_stream_call, get_llm_stream_yield_call
 from utils.prompts import Prompts
 from utils.web_scraping_beautifulsoup import Website
 
@@ -87,29 +88,17 @@ def get_all_company_details(website, relevant_links):
         result += Website(link['url']).get_contents()
     return result
 
-def main(args):
-    print("********** Application Started **********")
-    print(args)
-
-    llm_model = args[0] # "ollama/openai"
-    model = args[1] # "llama3.2/gpt-4o-mini"
-    website = args[2] # "https://huggingface.co"
-    company_name = args[3] # HuggingFace
-    translate_to = "Spanish"
-
-    if(args[0] == "openai"):
+def get_company_brochure(llm_model, model, website, company_name):
+    if(llm_model == "openai"):
         llm_model = OpenAI()
 
     ai_model = get_model(llm_model)
-
     # Scraping website
     print("website scraping Started...")
     website = Website(website)
     print("website scraping Ended...")
-    
     # Prepare prompts to read the links on a webpage, and respond in structured JSON.
     link_prompts = Prompts(system_prompt_for_link(), user_prompt_for_link(website))
-
     print("LLM Thinking...")
     print("Getting relevant links from the website")
 
@@ -118,24 +107,25 @@ def main(args):
     #print(relevant_links)
     company_details = get_all_company_details(website=website, relevant_links=relevant_links)
 
-    #print(company_details)
-
     truncate_char = 5000
     brochure_prompts = Prompts(system_prompt_for_brochure(), user_prompt_for_brochure(company_name, company_details, truncate_char))
     
     print("LLM Thinking...")
     print("Creating Company brochure from LLM")
-    llm_company_brochure = get_llm_call(ai_model, model, brochure_prompts.get_messages())
+    result = get_llm_stream_yield_call(ai_model, model, brochure_prompts.get_messages())
+    yield from result
 
-    print(llm_company_brochure)
+def main():
+    print("********** Application Started **********")
 
-    translate_prompts = Prompts(system_prompt_for_translation(), user_prompt_for_translation("English",translate_to,llm_company_brochure))
-
-    print("LLM Thinking...")
-    print(f"Creating Company brochure from English to {translate_to}")
-    llm_translated_brochure = get_llm_stream_call(ai_model, model, translate_prompts.get_messages())
-
-    print(llm_translated_brochure)
+    gr.Interface(fn=get_company_brochure,
+                 inputs=[gr.Dropdown(["openai", "ollama"], label="Select LLM"),
+                         gr.Dropdown(["gpt-4o-mini", "llama3.2"], label="Select model"),
+                         gr.Textbox(label="Enter Website..."),
+                         gr.Textbox(label="Enter Company Name..."),
+                         ],
+                 outputs=[gr.Markdown(label="Brochure:")],
+                 flagging_mode='never').launch()
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()

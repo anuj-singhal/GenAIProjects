@@ -66,6 +66,18 @@ def get_llm_stream_call(llm_model, model, messages):
     
     return response
 
+def get_llm_stream_yield_call(llm_model, model, messages):
+    stream = llm_model.chat.completions.create(
+        model=model,
+        messages=messages,
+        stream=True
+    )
+    
+    response = ""
+    for chunk in stream:
+        response += chunk.choices[0].delta.content or ''
+        yield response
+
 def get_llm_call(llm_model, model, messages):
     response = llm_model.chat.completions.create(model=model, 
                                                  messages=messages,
