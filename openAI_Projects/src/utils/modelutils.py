@@ -52,10 +52,10 @@ def get_model(model, base_url=None, api_key=None):
             ai_model = get_olamma_model()
     return ai_model
 
-def get_response(llm_model, model, messages):
-    response = llm_model.chat.completions.create(model=model, messages=messages)
-    return response
+# def get_response(llm_model, model, messages):
+#     response = llm_model.chat.completions.create(model=model, messages=messages)
+#     return response
 
-def display_response(llm_model, model, messages):
-    response = get_response(llm_model, model, messages)
-    print(response.choices[0].message.content)
+# def display_response(llm_model, model, messages):
+#     response = get_response(llm_model, model, messages)
+#     print(response.choices[0].message.content)

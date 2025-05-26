@@ -7,18 +7,22 @@ from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 from IPython.display import Markdown, display
 from openai import OpenAI
-from utils.modelutils import get_model, display_response
+from utils.modelutils import get_model
 from utils.prompts import Prompts
 from utils.web_scraping_beautifulsoup import Website
 
+def get_website_summary(llm_model, model, messages):
+    response = llm_model.chat.completions.create(model=model, 
+                                                 messages=messages)
+    return response.choices[0].message.content
 
 def main(args):
     print("********** Application Started **********")
     print(args)
 
-    llm_model = args[0]
-    model = args[1]
-    website = args[2]
+    llm_model = args[0] # "ollama"
+    model = args[1] # "llama3.2"
+    website = args[2] # "https://cnn.com"
 
     if(args[0] == "openai"):
         llm_model = OpenAI()
@@ -52,7 +56,9 @@ def main(args):
     print("LLM Thinking...")
     print("Getting summary and display in markdown...")
     # display the website summary using markdown
-    display_response(llm_model=ai_model, model=model, messages=prompts.get_messages())
+    #display_response(llm_model=ai_model, model=model, messages=prompts.get_messages())
+    llm_website_summary = get_website_summary(ai_model, model, prompts.get_messages())
+    print(llm_website_summary)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
