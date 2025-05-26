@@ -3,6 +3,7 @@ import os
 import requests
 from dotenv import load_dotenv
 from IPython.display import Markdown, display
+import json
 
 load_dotenv(override=True)
 
@@ -52,10 +53,30 @@ def get_model(model, base_url=None, api_key=None):
             ai_model = get_olamma_model()
     return ai_model
 
-# def get_response(llm_model, model, messages):
-#     response = llm_model.chat.completions.create(model=model, messages=messages)
-#     return response
+def get_llm_stream_call(llm_model, model, messages):
+    stream = llm_model.chat.completions.create(
+        model=model,
+        messages=messages,
+        stream=True
+    )
+    
+    response = ""
+    for chunk in stream:
+        response += chunk.choices[0].delta.content or ''
+    
+    return response
 
-# def display_response(llm_model, model, messages):
-#     response = get_response(llm_model, model, messages)
-#     print(response.choices[0].message.content)
+def get_llm_call(llm_model, model, messages):
+    response = llm_model.chat.completions.create(model=model, 
+                                                 messages=messages,
+                                                 )
+    result = response.choices[0].message.content
+    return result
+
+def get_llm_json_call(llm_model, model, messages):
+    response = llm_model.chat.completions.create(model=model, 
+                                                 messages=messages,
+                                                 response_format={"type": "json_object"}
+                                                 )
+    result = response.choices[0].message.content
+    return json.loads(result)
