@@ -51,7 +51,6 @@ def get_docstring_code(llm_model, model, python_code, file_path):
     
     if(not (file_path == "" or file_path == None)):
         python_code = get_code_text(file_path)
-        print(python_code)
 
     # Prepare prompts to read the links on a webpage, and respond in structured JSON.
     prompts = Prompts(system_prompt(), user_prompt(python_code))
